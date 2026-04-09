@@ -138,7 +138,7 @@ export default function Dashboard({ verificationStatus, setIsVerificationModalOp
           <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-6">Top Platforms</h3>
           <div className="space-y-6">
             {[
-              { name: 'KulBox', streams: '1.2M', color: 'bg-brand-gradient' },
+              { name: 'KulSound', streams: '1.2M', color: 'bg-brand-gradient' },
             ].map((platform) => (
               <div key={platform.name} className="space-y-2">
                 <div className="flex justify-between text-sm">
@@ -155,7 +155,7 @@ export default function Dashboard({ verificationStatus, setIsVerificationModalOp
             ))}
           </div>
           <p className="mt-8 text-xs text-zinc-500 text-center italic">
-            Currently only supported by KulBox
+            Currently only supported by KulSound
           </p>
         </div>
       </div>

@@ -40,6 +40,7 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, adminRole, 
     { id: 'admin-users', label: 'Users', icon: Users, permission: 'manage_users' },
     { id: 'admin-tracks', label: 'Tracks', icon: Music, permission: 'manage_tracks' },
     { id: 'admin-verifications', label: 'Verifications', icon: ShieldCheck, permission: 'manage_verifications' },
+    { id: 'admin-royalties', label: 'Royalties', icon: DollarSign, permission: 'manage_royalties' },
     { id: 'admin-reports', label: 'Reports', icon: Flag, permission: 'manage_reports' },
     { id: 'admin-settings', label: 'Settings', icon: Settings, permission: 'manage_settings' },
   ];
@@ -59,7 +60,7 @@ export default function Sidebar({ activeTab, setActiveTab, userRole, adminRole, 
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-brand-gradient rounded-lg flex items-center justify-center text-white font-bold">K</div>
           <div className="flex flex-col -space-y-1">
-            <span className="text-zinc-900 dark:text-white font-bold text-xl tracking-tight leading-none">KulBox</span>
+            <span className="text-zinc-900 dark:text-white font-bold text-xl tracking-tight leading-none">KulSound</span>
             <span className="text-[6px] font-bold uppercase tracking-widest text-zinc-500">...the creator galaxy</span>
           </div>
         </div>

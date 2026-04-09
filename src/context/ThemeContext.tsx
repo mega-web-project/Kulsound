@@ -11,7 +11,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('kulbox-theme');
+    const saved = localStorage.getItem('kulsound-theme');
     return (saved as Theme) || 'dark';
   });
 
@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-    localStorage.setItem('kulbox-theme', theme);
+    localStorage.setItem('kulsound-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

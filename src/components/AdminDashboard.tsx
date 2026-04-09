@@ -84,6 +84,38 @@ interface VerificationRequest {
   status: 'Verified' | 'Pending' | 'Rejected';
 }
 
+interface AdminRoyalty {
+  id: string;
+  artistId: string;
+  artistName: string;
+  balance: number;
+  lifetimeEarnings: number;
+  lastPayoutDate: string;
+  payoutMethod: string;
+  lastAutomatedRun?: string;
+}
+
+interface RoyaltyDistribution {
+  id: string;
+  artistId: string;
+  artistName: string;
+  amount: number;
+  type: 'Automated' | 'Manual';
+  period: string;
+  date: string;
+}
+
+interface AdminPayoutRequest {
+  id: string;
+  artistId: string;
+  artistName: string;
+  amount: number;
+  method: 'MoMo' | 'Bank' | 'PayPal';
+  details: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  date: string;
+}
+
 const mockUsers: AdminUser[] = [
   { id: '1', name: 'Neon Pulse', email: 'neon@pulse.com', role: 'Artist', status: 'Active', joinedDate: '2024-01-15', avatar: 'https://picsum.photos/seed/artist1/100/100' },
   { id: '2', name: 'King Kwesi', email: 'kwesi@music.gh', role: 'Artist', status: 'Pending', joinedDate: '2024-03-10', avatar: 'https://picsum.photos/seed/artist2/100/100' },
@@ -119,6 +151,23 @@ const mockVerifications: VerificationRequest[] = [
   }
 ];
 
+const mockRoyalties: AdminRoyalty[] = [
+  { id: '1', artistId: '1', artistName: 'Neon Pulse', balance: 1250.50, lifetimeEarnings: 15400.00, lastPayoutDate: '2024-03-01', payoutMethod: 'PayPal', lastAutomatedRun: '2024-04-01' },
+  { id: '2', artistId: '2', artistName: 'King Kwesi', balance: 450.75, lifetimeEarnings: 890.00, lastPayoutDate: '2024-03-15', payoutMethod: 'MoMo', lastAutomatedRun: '2024-04-01' },
+  { id: '3', artistId: '4', artistName: 'Lofi Girl', balance: 5800.20, lifetimeEarnings: 45200.00, lastPayoutDate: '2024-02-28', payoutMethod: 'Bank', lastAutomatedRun: '2024-04-01' },
+];
+
+const mockDistributions: RoyaltyDistribution[] = [
+  { id: '1', artistId: '1', artistName: 'Neon Pulse', amount: 450.20, type: 'Automated', period: 'March 2024', date: '2024-04-01' },
+  { id: '2', artistId: '4', artistName: 'Lofi Girl', amount: 1200.50, type: 'Automated', period: 'March 2024', date: '2024-04-01' },
+  { id: '3', artistId: '2', artistName: 'King Kwesi', amount: 120.00, type: 'Manual', period: 'Adjustment - missing streams', date: '2024-03-28' },
+];
+
+const mockPayoutRequests: AdminPayoutRequest[] = [
+  { id: '1', artistId: '1', artistName: 'Neon Pulse', amount: 500.00, method: 'PayPal', details: 'neon@pulse.com', status: 'Pending', date: '2024-04-05' },
+  { id: '2', artistId: '4', artistName: 'Lofi Girl', amount: 2000.00, method: 'Bank', details: 'JP Morgan ****4567', status: 'Pending', date: '2024-04-07' },
+];
+
 interface AdminDashboardProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -127,7 +176,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ activeTab, setActiveTab, adminRole, externalReports = [] }: AdminDashboardProps) {
-  const activeSubTab = activeTab.replace('admin-', '') as 'overview' | 'users' | 'tracks' | 'verifications' | 'reports' | 'settings';
+  const activeSubTab = activeTab.replace('admin-', '') as 'overview' | 'users' | 'tracks' | 'verifications' | 'royalties' | 'reports' | 'settings';
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [roleFilter, setRoleFilter] = useState('All');
@@ -138,6 +187,9 @@ export default function AdminDashboard({ activeTab, setActiveTab, adminRole, ext
   const [users, setUsers] = useState<AdminUser[]>(mockUsers);
   const [tracks, setTracks] = useState<AdminTrack[]>(mockTracks);
   const [verifications, setVerifications] = useState<VerificationRequest[]>(mockVerifications);
+  const [royalties, setRoyalties] = useState<AdminRoyalty[]>(mockRoyalties);
+  const [distributions, setDistributions] = useState<RoyaltyDistribution[]>(mockDistributions);
+  const [payoutRequests, setPayoutRequests] = useState<AdminPayoutRequest[]>(mockPayoutRequests);
   const [reports, setReports] = useState<AdminReport[]>([...externalReports, ...mockReports]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
@@ -163,6 +215,11 @@ export default function AdminDashboard({ activeTab, setActiveTab, adminRole, ext
   const [selectedTrack, setSelectedTrack] = useState<AdminTrack | null>(null);
   const [selectedVerification, setSelectedVerification] = useState<VerificationRequest | null>(null);
   const [selectedReport, setSelectedReport] = useState<AdminReport | null>(null);
+  const [selectedRoyalty, setSelectedRoyalty] = useState<AdminRoyalty | null>(null);
+  const [selectedPayout, setSelectedPayout] = useState<AdminPayoutRequest | null>(null);
+  const [isAddRoyaltyModalOpen, setIsAddRoyaltyModalOpen] = useState(false);
+  const [royaltyAmount, setRoyaltyAmount] = useState('');
+  const [royaltyReason, setRoyaltyReason] = useState('');
   const [tracksToReject, setTracksToReject] = useState<AdminTrack[]>([]);
   const [rejectionReason, setRejectionReason] = useState('');
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -312,6 +369,66 @@ export default function AdminDashboard({ activeTab, setActiveTab, adminRole, ext
     }
   };
 
+  const handleAddRoyalty = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRoyalty || !royaltyAmount) return;
+
+    const amount = parseFloat(royaltyAmount);
+    
+    // 1. Update artist balance
+    setRoyalties(prev => prev.map(r => 
+      r.id === selectedRoyalty.id 
+        ? { ...r, balance: r.balance + amount, lifetimeEarnings: r.lifetimeEarnings + amount } 
+        : r
+    ));
+
+    // 2. Add to distribution history
+    const newDistribution: RoyaltyDistribution = {
+      id: Math.random().toString(36).substr(2, 9),
+      artistId: selectedRoyalty.artistId,
+      artistName: selectedRoyalty.artistName,
+      amount: amount,
+      type: 'Manual',
+      period: royaltyReason,
+      date: new Date().toISOString().split('T')[0]
+    };
+    setDistributions(prev => [newDistribution, ...prev]);
+
+    setIsAddRoyaltyModalOpen(false);
+    setRoyaltyAmount('');
+    setRoyaltyReason('');
+    alert(`Successfully processed manual adjustment of $${amount} for ${selectedRoyalty.artistName}`);
+  };
+
+  const handleApprovePayout = (payoutId: string) => {
+    const payout = payoutRequests.find(p => p.id === payoutId);
+    if (!payout) return;
+
+    // 1. Update payout status
+    setPayoutRequests(prev => prev.map(p => 
+      p.id === payoutId ? { ...p, status: 'Approved' } : p
+    ));
+
+    // 2. Deduct from artist balance
+    setRoyalties(prev => prev.map(r => 
+      r.artistId === payout.artistId 
+        ? { ...r, balance: r.balance - payout.amount, lastPayoutDate: new Date().toISOString().split('T')[0] } 
+        : r
+    ));
+
+    setSelectedPayout(null);
+    alert(`Payout of $${payout.amount} for ${payout.artistName} has been approved and processed.`);
+  };
+
+  const handleRejectPayout = (payoutId: string) => {
+    if (window.confirm('Are you sure you want to reject this payout request?')) {
+      setPayoutRequests(prev => prev.map(p => 
+        p.id === payoutId ? { ...p, status: 'Rejected' } : p
+      ));
+      setSelectedPayout(null);
+    }
+  };
+
   const handleResetPassword = (email: string) => {
     alert(`Password reset link has been sent to ${email}`);
   };
@@ -371,7 +488,7 @@ export default function AdminDashboard({ activeTab, setActiveTab, adminRole, ext
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase italic text-zinc-900 dark:text-white">Admin Galaxy.</h1>
-          <p className="text-zinc-500 font-medium text-sm sm:text-base">Manage the KulBox ecosystem and its creators.</p>
+          <p className="text-zinc-500 font-medium text-sm sm:text-base">Manage the KulSound ecosystem and its creators.</p>
         </div>
       </div>
 
@@ -484,7 +601,7 @@ export default function AdminDashboard({ activeTab, setActiveTab, adminRole, ext
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-white uppercase italic">User Management.</h2>
-              <p className="text-sm text-zinc-500">View and manage all users in the KulBox ecosystem.</p>
+              <p className="text-sm text-zinc-500">View and manage all users in the KulSound ecosystem.</p>
             </div>
           </div>
 
@@ -946,6 +1063,155 @@ export default function AdminDashboard({ activeTab, setActiveTab, adminRole, ext
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === 'royalties' && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-white uppercase italic">Artist Royalties.</h2>
+                    <p className="text-sm text-zinc-500">Balances are updated automatically based on streaming data.</p>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                    <Clock className="w-3.5 h-3.5" />
+                    Last Auto-Run: April 1, 2024
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="text-zinc-500 text-[10px] uppercase tracking-widest border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                          <th className="px-6 py-4 font-black">Artist</th>
+                          <th className="px-6 py-4 font-black">Current Balance</th>
+                          <th className="px-6 py-4 font-black">Lifetime Earnings</th>
+                          <th className="px-6 py-4 font-black text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {royalties.map((royalty) => (
+                          <tr key={royalty.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white">{royalty.artistName}</p>
+                              <p className="text-[10px] text-zinc-500">ID: {royalty.artistId}</p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm font-bold text-emerald-500">${royalty.balance.toLocaleString()}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm font-bold text-zinc-900 dark:text-white">${royalty.lifetimeEarnings.toLocaleString()}</span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button 
+                                onClick={() => {
+                                  setSelectedRoyalty(royalty);
+                                  setIsAddRoyaltyModalOpen(true);
+                                }}
+                                className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-lg text-xs font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                              >
+                                Manual Adjustment
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <h2 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-white uppercase italic">Distribution History.</h2>
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="text-zinc-500 text-[10px] uppercase tracking-widest border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                          <th className="px-6 py-4 font-black">Date</th>
+                          <th className="px-6 py-4 font-black">Artist</th>
+                          <th className="px-6 py-4 font-black">Amount</th>
+                          <th className="px-6 py-4 font-black">Type</th>
+                          <th className="px-6 py-4 font-black">Period / Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {distributions.map((dist) => (
+                          <tr key={dist.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                            <td className="px-6 py-4 text-xs text-zinc-500">{dist.date}</td>
+                            <td className="px-6 py-4">
+                              <p className="text-sm font-bold text-zinc-900 dark:text-white">{dist.artistName}</p>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm font-bold text-emerald-500">+${dist.amount.toLocaleString()}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={cn(
+                                "px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest",
+                                dist.type === 'Automated' ? "bg-brand-purple/10 text-brand-purple" : "bg-amber-500/10 text-amber-500"
+                              )}>
+                                {dist.type}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-xs text-zinc-500">{dist.period}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h2 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-white uppercase italic">Payout Requests.</h2>
+              <div className="space-y-4">
+                {payoutRequests.filter(p => p.status === 'Pending').map((payout) => (
+                  <div key={payout.id} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <p className="text-sm font-bold text-zinc-900 dark:text-white">{payout.artistName}</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">{payout.date}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-black text-brand-purple">${payout.amount.toLocaleString()}</p>
+                        <p className="text-[10px] text-zinc-400 font-bold uppercase">{payout.method}</p>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl mb-4">
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Payment Details</p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-300 font-mono break-all">{payout.details}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        onClick={() => handleApprovePayout(payout.id)}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Approve
+                      </button>
+                      <button 
+                        onClick={() => handleRejectPayout(payout.id)}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-500/10 text-rose-500 rounded-xl text-xs font-bold hover:bg-rose-500/20 transition-all"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {payoutRequests.filter(p => p.status === 'Pending').length === 0 && (
+                  <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 text-center">
+                    <p className="text-sm text-zinc-500 font-medium">No pending payout requests.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1521,6 +1787,66 @@ export default function AdminDashboard({ activeTab, setActiveTab, adminRole, ext
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isAddRoyaltyModalOpen && selectedRoyalty && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 w-full max-w-md rounded-[40px] overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-8 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+              <div>
+                <h2 className="text-xl font-black tracking-tighter text-zinc-900 dark:text-white uppercase italic">Manual Adjustment.</h2>
+                <p className="text-sm text-zinc-500">Adjust balance for {selectedRoyalty.artistName}</p>
+              </div>
+              <button onClick={() => setIsAddRoyaltyModalOpen(false)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+                <X className="w-5 h-5 text-zinc-400" />
+              </button>
+            </div>
+            <form onSubmit={handleAddRoyalty} className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-zinc-400 ml-1">Adjustment Amount (USD)</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    required
+                    value={royaltyAmount}
+                    onChange={(e) => setRoyaltyAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-2xl pl-12 pr-6 py-4 text-zinc-900 dark:text-white focus:outline-none focus:border-brand-purple transition-all font-bold"
+                  />
+                </div>
+                <p className="text-[10px] text-zinc-500 ml-1 italic">Use negative values for deductions.</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-zinc-400 ml-1">Reason for Adjustment</label>
+                <input 
+                  type="text" 
+                  required
+                  value={royaltyReason}
+                  onChange={(e) => setRoyaltyReason(e.target.value)}
+                  placeholder="e.g., Missing stream correction, Bonus, etc."
+                  className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-2xl px-6 py-4 text-zinc-900 dark:text-white focus:outline-none focus:border-brand-purple transition-all"
+                />
+              </div>
+              <div className="flex gap-4 pt-2">
+                <button 
+                  type="button"
+                  onClick={() => setIsAddRoyaltyModalOpen(false)}
+                  className="flex-1 py-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-2xl font-bold text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-4 bg-zinc-900 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-all shadow-lg"
+                >
+                  Apply Adjustment
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

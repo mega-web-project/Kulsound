@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '../context/ThemeContext';
 
 interface LandingPageProps {
-  onGetStarted: () => void;
+  onGetStarted: (mode?: 'login' | 'signup') => void;
 }
 
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
@@ -35,13 +35,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               <Music className="text-white w-6 h-6" />
             </div>
             <div className="flex flex-col -space-y-1">
-              <span className="text-2xl font-black tracking-tighter uppercase italic text-zinc-900 dark:text-white">KulBox</span>
+              <span className="text-2xl font-black tracking-tighter uppercase italic text-zinc-900 dark:text-white">KulSound</span>
               <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500 ml-1">...the creator galaxy</span>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-500 dark:text-zinc-400">
             <a href="#features" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Features</a>
-            <a href="#why-us" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Why KulBox</a>
+            <a href="#why-us" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Why KulSound</a>
             <a href="#earnings" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Earnings</a>
           </div>
           <div className="flex items-center gap-4">
@@ -52,7 +52,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               {theme === 'light' ? <Moon className="w-5 h-5 text-zinc-600" /> : <Sun className="w-5 h-5 text-zinc-400" />}
             </button>
             <button 
-              onClick={onGetStarted}
+              onClick={() => onGetStarted('login')}
               className="hidden sm:block px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-sm hover:bg-brand-purple dark:hover:bg-brand-purple hover:text-white transition-all active:scale-95"
             >
               Login
@@ -88,7 +88,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="text-2xl font-bold text-zinc-900 dark:text-white uppercase italic tracking-tighter"
                 >
-                  Why KulBox
+                  Why KulSound
                 </a>
                 <a 
                   href="#earnings" 
@@ -100,7 +100,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <button 
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    onGetStarted();
+                    onGetStarted('signup');
                   }}
                   className="w-full py-4 bg-brand-gradient text-white rounded-2xl font-black text-lg uppercase tracking-tight shadow-xl shadow-brand-purple/20"
                 >
@@ -138,12 +138,12 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </h1>
 
             <p className="text-zinc-500 dark:text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed">
-              KulBox is the ultimate platform for independent artists. Upload for free, reach 150+ stores, and keep 100% of your streaming royalties.
+              KulSound is the ultimate platform for independent artists. Upload for free, reach 150+ stores, and keep 100% of your streaming royalties.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
               <button 
-                onClick={onGetStarted}
+                onClick={() => onGetStarted('signup')}
                 className="w-full sm:w-auto px-10 py-5 bg-brand-gradient text-white rounded-full font-black text-lg uppercase tracking-tight hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-brand-purple/40 flex items-center justify-center gap-3"
               >
                 Get Started Now
@@ -287,7 +287,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                   </div>
                 </div>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  "KulBox changed my career. I went from 0 to 1M streams in 6 months."
+                  "KulSound changed my career. I went from 0 to 1M streams in 6 months."
                 </p>
                 <p className="text-xs font-bold text-brand-purple mt-4 uppercase tracking-widest">— Alex Rivera, Indie Artist</p>
               </div>
@@ -309,7 +309,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 </h3>
               </div>
               <p className="text-zinc-500 dark:text-zinc-400 text-lg leading-relaxed">
-                We believe every artist deserves a chance to be heard without financial barriers. That's why KulBox is completely free to use. No subscription fees, no hidden charges, no bullshit.
+                We believe every artist deserves a chance to be heard without financial barriers. That's why KulSound is completely free to use. No subscription fees, no hidden charges, no bullshit.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="p-6 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/5 rounded-3xl">
@@ -329,7 +329,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <TrendingUp className="w-12 h-12 text-brand-purple" />
                 <h3 className="text-3xl font-black text-zinc-900 dark:text-white uppercase italic tracking-tight">Gain from Every Stream</h3>
                 <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                  Every time your music is played on Spotify, Apple Music, or TikTok, you earn royalties. We collect these earnings from 150+ stores and deposit them directly into your KulBox account.
+                  Every time your music is played on Spotify, Apple Music, or TikTok, you earn royalties. We collect these earnings from 150+ stores and deposit them directly into your KulSound account.
                 </p>
               </div>
               <ul className="space-y-4">
@@ -361,10 +361,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             earning for free?
           </h2>
           <p className="text-white/70 text-lg md:text-xl font-bold max-w-xl mx-auto">
-            Join thousands of artists who trust KulBox for their music distribution. No fees, no cuts, just your music.
+            Join thousands of artists who trust KulSound for their music distribution. No fees, no cuts, just your music.
           </p>
           <button 
-            onClick={onGetStarted}
+            onClick={() => onGetStarted('signup')}
             className="px-12 py-6 bg-white text-black rounded-full font-black text-xl uppercase tracking-tight hover:bg-zinc-100 transition-all hover:scale-105 active:scale-95 shadow-2xl"
           >
             Create Your Account
@@ -381,7 +381,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <Music className="text-white w-5 h-5" />
               </div>
               <div className="flex flex-col -space-y-1">
-                <span className="text-xl font-black tracking-tighter uppercase italic text-zinc-900 dark:text-white">KulBox</span>
+                <span className="text-xl font-black tracking-tighter uppercase italic text-zinc-900 dark:text-white">KulSound</span>
                 <span className="text-[6px] font-bold uppercase tracking-widest text-zinc-500 ml-1">...the creator galaxy</span>
               </div>
             </div>
@@ -408,7 +408,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           ))}
         </div>
         <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-zinc-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-zinc-600 dark:text-zinc-500 text-xs uppercase font-bold tracking-widest">© 2026 KulBox Music. All rights reserved.</p>
+          <p className="text-zinc-600 dark:text-zinc-500 text-xs uppercase font-bold tracking-widest">© 2026 KulSound Music. All rights reserved.</p>
           <div className="flex gap-6">
             {['Twitter', 'Instagram', 'Spotify', 'YouTube'].map((social, i) => (
               <a key={i} href="#" className="text-zinc-600 dark:text-zinc-500 text-xs uppercase font-bold tracking-widest hover:text-zinc-900 dark:hover:text-white transition-colors">{social}</a>

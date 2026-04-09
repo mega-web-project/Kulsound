@@ -38,14 +38,15 @@ const GoogleIcon = () => (
 );
 
 interface AuthPageProps {
+  initialView?: 'login' | 'signup';
   onAuthComplete: (isNewUser: boolean, role: 'user' | 'admin', adminRole?: AdminRoleType) => void;
   onBack: () => void;
 }
 
-type AuthView = 'login' | 'signup' | 'forgot-password' | 'otp-verification' | 'new-password';
+type AuthView = 'login' | 'signup' | 'forgot-password' | 'otp-verification' | 'new-password' | 'signup-otp';
 
-export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
-  const [view, setView] = useState<AuthView>('login');
+export default function AuthPage({ initialView = 'login', onAuthComplete, onBack }: AuthPageProps) {
+  const [view, setView] = useState<AuthView>(initialView);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -81,6 +82,28 @@ export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (view === 'signup') {
+      if (formData.password !== formData.confirmPassword) {
+        alert("Passwords do not match");
+        return;
+      }
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+        setView('signup-otp');
+      }, 1500);
+      return;
+    }
+
+    if (view === 'signup-otp') {
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+        onAuthComplete(true, 'user');
+      }, 1500);
+      return;
+    }
+
     if (view === 'forgot-password') {
       setIsLoading(true);
       setTimeout(() => {
@@ -119,8 +142,8 @@ export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
     setTimeout(() => {
       setIsLoading(false);
       // For demo purposes, we still infer role from email
-      // admin@kulbox.com -> admin
-      // super@kulbox.com -> super_admin
+      // admin@kulsound.com -> admin
+      // super@kulsound.com -> super_admin
       const isLogin = view === 'login';
       const role = formData.email.toLowerCase().includes('admin') ? 'admin' : 'user';
       const adminRole = role === 'admin' ? (formData.email.toLowerCase().includes('super') ? 'super_admin' : 'admin') : undefined;
@@ -133,7 +156,8 @@ export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
     signup: 'Join the Movement',
     'forgot-password': 'Reset Password',
     'otp-verification': 'Verify OTP',
-    'new-password': 'New Password'
+    'new-password': 'New Password',
+    'signup-otp': 'Verify Email'
   };
 
   const subtitles = {
@@ -141,7 +165,8 @@ export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
     signup: 'Start your global distribution journey today',
     'forgot-password': 'Enter your email to receive a reset code',
     'otp-verification': `We've sent a 6-digit code to ${formData.email}`,
-    'new-password': 'Create a strong new password for your account'
+    'new-password': 'Create a strong new password for your account',
+    'signup-otp': `Enter the 6-digit code sent to ${formData.email}`
   };
 
   return (
@@ -191,7 +216,7 @@ export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
                   <input 
                     type="email" 
                     required
-                    disabled={view === 'otp-verification'}
+                    disabled={view === 'otp-verification' || view === 'signup-otp'}
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     placeholder="name@example.com"
@@ -201,7 +226,7 @@ export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
               </div>
             )}
 
-            {view === 'otp-verification' && (
+            {(view === 'otp-verification' || view === 'signup-otp') && (
               <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex justify-between gap-2">
                   {otp.map((digit, index) => (
@@ -293,7 +318,7 @@ export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
                   {view === 'login' ? 'Sign In' : 
                    view === 'signup' ? 'Create Account' : 
                    view === 'forgot-password' ? 'Send Reset Code' :
-                   view === 'otp-verification' ? 'Verify Code' :
+                   (view === 'otp-verification' || view === 'signup-otp') ? 'Verify Code' :
                    'Update Password'}
                   <ArrowRight className="w-5 h-5" />
                 </>
@@ -321,7 +346,7 @@ export default function AuthPage({ onAuthComplete, onBack }: AuthPageProps) {
             </div>
           )}
 
-          {(view === 'forgot-password' || view === 'otp-verification' || view === 'new-password') && (
+          {(view === 'forgot-password' || view === 'otp-verification' || view === 'new-password' || view === 'signup-otp') && (
             <div className="mt-6">
               <button 
                 onClick={() => setView('login')}

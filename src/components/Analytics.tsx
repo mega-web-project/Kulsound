@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import * as d3 from 'd3';
 import { 
   Users, 
   Play, 
@@ -84,12 +85,91 @@ const ageData = [
   { range: '45+', percentage: 8 },
 ];
 
+const heatmapData = [
+  { day: 'Mon', data: [12, 8, 5, 3, 2, 4, 15, 35, 65, 85, 95, 110, 125, 130, 120, 115, 140, 185, 210, 245, 195, 150, 85, 45] },
+  { day: 'Tue', data: [15, 10, 6, 4, 3, 5, 18, 40, 70, 90, 105, 120, 135, 140, 130, 125, 150, 195, 220, 255, 205, 160, 95, 55] },
+  { day: 'Wed', data: [18, 12, 8, 5, 4, 6, 20, 45, 75, 95, 115, 130, 145, 150, 140, 135, 160, 205, 230, 265, 215, 170, 105, 65] },
+  { day: 'Thu', data: [20, 15, 10, 6, 5, 8, 25, 50, 80, 100, 125, 140, 155, 160, 150, 145, 170, 215, 240, 275, 225, 180, 115, 75] },
+  { day: 'Fri', data: [25, 20, 15, 10, 8, 12, 35, 65, 95, 120, 145, 165, 185, 195, 190, 185, 220, 285, 340, 410, 385, 295, 185, 115] },
+  { day: 'Sat', data: [85, 65, 45, 35, 25, 20, 45, 85, 125, 165, 195, 225, 255, 275, 285, 295, 325, 385, 440, 510, 485, 395, 285, 185] },
+  { day: 'Sun', data: [95, 75, 55, 45, 35, 30, 55, 95, 135, 175, 205, 235, 265, 285, 295, 305, 335, 395, 450, 520, 495, 405, 295, 195] },
+];
+
+const hours = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+
+const geoData = [
+  { id: 'USA', value: 450000 },
+  { id: 'GBR', value: 180000 },
+  { id: 'DEU', value: 120000 },
+  { id: 'BRA', value: 100000 },
+  { id: 'CAN', value: 85000 },
+  { id: 'FRA', value: 75000 },
+  { id: 'AUS', value: 65000 },
+  { id: 'JPN', value: 55000 },
+  { id: 'NGA', value: 45000 },
+  { id: 'GHA', value: 35000 },
+];
+
 export default function Analytics() {
   const { theme } = useTheme();
   const [selectedPeriod, setSelectedPeriod] = useState('7D');
   const [isExporting, setIsExporting] = useState(false);
+  const mapRef = useRef<SVGSVGElement>(null);
 
   const currentStreamData = useMemo(() => periodData[selectedPeriod], [selectedPeriod]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const width = 800;
+    const height = 400;
+    const svg = d3.select(mapRef.current);
+    svg.selectAll("*").remove();
+
+    const projection = d3.geoNaturalEarth1()
+      .scale(150)
+      .translate([width / 2, height / 2]);
+
+    const path = d3.geoPath().projection(projection);
+
+    const colorScale = d3.scaleSequential(d3.interpolatePurples)
+      .domain([0, 500000]);
+
+    // Fetch world map data
+    d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then((data: any) => {
+      svg.append("g")
+        .selectAll("path")
+        .data(data.features)
+        .enter()
+        .append("path")
+        .attr("d", path as any)
+        .attr("fill", (d: any) => {
+          const country = geoData.find(c => c.id === d.id);
+          return country ? colorScale(country.value) : (theme === 'dark' ? '#27272a' : '#f4f4f5');
+        })
+        .attr("stroke", theme === 'dark' ? "#18181b" : "#ffffff")
+        .attr("stroke-width", 0.5)
+        .on("mouseover", function(event, d: any) {
+          const country = geoData.find(c => c.id === d.id);
+          d3.select(this)
+            .attr("stroke", "#C026D3")
+            .attr("stroke-width", 1.5);
+          
+          // Simple tooltip
+          const tooltip = d3.select("#map-tooltip");
+          tooltip.transition().duration(200).style("opacity", .9);
+          tooltip.html(`${d.properties.name}<br/>${country ? country.value.toLocaleString() + ' streams' : 'No data'}`)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+          d3.select(this)
+            .attr("stroke", theme === 'dark' ? "#18181b" : "#ffffff")
+            .attr("stroke-width", 0.5);
+          d3.select("#map-tooltip").transition().duration(500).style("opacity", 0);
+        });
+    });
+  }, [theme]);
 
   const exportToCSV = (data: any[], filename: string) => {
     if (data.length === 0) return;
@@ -440,6 +520,125 @@ export default function Analytics() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Streaming Heatmap */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div id="heatmap-section" className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 sm:p-8 rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Streaming Activity Heatmap</h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Identify peak listening hours across the week.</p>
+            </div>
+            <button 
+              onClick={() => exportToImage('heatmap-section', 'streaming_heatmap')}
+              disabled={isExporting}
+              className="p-2 text-zinc-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-lg transition-all"
+              title="Export as Image"
+            >
+              <ImageIcon className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="relative">
+            <div className="overflow-x-auto pb-4 custom-scrollbar">
+              <div className="min-w-[400px]">
+                {/* Hours Header */}
+                <div className="flex mb-2">
+                  <div className="w-10 flex-shrink-0" />
+                  <div className="flex-1 flex justify-between px-2">
+                    {['12A', '6A', '12P', '6P'].map((label, i) => (
+                      <span key={i} className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Heatmap Grid */}
+                <div className="space-y-1">
+                  {heatmapData.map((row) => (
+                    <div key={row.day} className="flex items-center gap-2">
+                      <span className="w-10 text-[8px] font-black text-zinc-500 uppercase tracking-tighter">{row.day}</span>
+                      <div className="flex-1 flex gap-0.5">
+                        {row.data.map((value, i) => {
+                          const max = 520;
+                          const intensity = value / max;
+                          return (
+                            <div 
+                              key={i}
+                              className="flex-1 aspect-square rounded-[1px] transition-all hover:scale-110 hover:z-10 cursor-pointer group relative"
+                              style={{ 
+                                backgroundColor: `rgba(192, 38, 211, ${Math.max(0.05, intensity)})`,
+                              }}
+                            >
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-900 text-white text-[8px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl">
+                                {row.day}, {hours[i]}
+                                <br />
+                                <span className="font-bold text-brand-purple">{value.toLocaleString()} streams</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Low</span>
+              <div className="flex gap-0.5">
+                {[0.1, 0.3, 0.5, 0.7, 0.9].map((op, i) => (
+                  <div 
+                    key={i} 
+                    className="w-3 h-3 rounded-[1px]" 
+                    style={{ backgroundColor: `rgba(192, 38, 211, ${op})` }} 
+                  />
+                ))}
+              </div>
+              <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">Peak</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Geographic Heatmap */}
+        <div id="geo-heatmap-section" className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 sm:p-8 rounded-2xl shadow-sm overflow-hidden relative">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Geographic Heatmap</h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Global distribution of your streaming audience.</p>
+            </div>
+            <button 
+              onClick={() => exportToImage('geo-heatmap-section', 'geographic_heatmap')}
+              disabled={isExporting}
+              className="p-2 text-zinc-400 hover:text-brand-purple hover:bg-brand-purple/10 rounded-lg transition-all"
+              title="Export as Image"
+            >
+              <ImageIcon className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="relative w-full overflow-hidden flex justify-center items-center h-[300px]">
+            <svg 
+              ref={mapRef} 
+              viewBox="0 0 800 400" 
+              className="w-full h-full max-w-full"
+            />
+            <div 
+              id="map-tooltip" 
+              className="absolute pointer-events-none opacity-0 bg-zinc-900 text-white text-[10px] px-2 py-1 rounded shadow-xl z-50 transition-opacity"
+            />
+          </div>
+
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">0 Streams</span>
+            <div className="h-2 w-24 bg-gradient-to-r from-zinc-100 to-brand-purple dark:from-zinc-800 dark:to-brand-purple rounded-full" />
+            <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">500k+ Streams</span>
+          </div>
         </div>
       </div>
     </div>

@@ -432,7 +432,7 @@ export default function Settings() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Withdrawal Settings</h3>
-                      <p className="text-sm text-zinc-500">SonicDistro is free for artists. Manage your payout methods below.</p>
+                      <p className="text-sm text-zinc-500">KulSound is free for artists. Manage your payout methods below.</p>
                     </div>
                   </div>
                   {editingMethod && (

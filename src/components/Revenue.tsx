@@ -62,7 +62,7 @@ const monthlyData = [
 ];
 
 const platformEarnings = [
-  { name: 'KulBox', amount: 12450.00, change: '+15.2%', trend: 'up', color: '#C026D3' },
+  { name: 'KulSound', amount: 12450.00, change: '+15.2%', trend: 'up', color: '#C026D3' },
 ];
 
 const releaseEarnings = [
@@ -96,6 +96,13 @@ const payoutHistory = [
   { id: 'PO-1230', date: 'Jan 05, 2026', amount: 920.75, method: 'Bank', status: 'Processing' },
 ];
 
+const distributionHistory = [
+  { id: 'RD-101', date: 'Apr 01, 2026', amount: 450.20, type: 'Automated', period: 'March 2024' },
+  { id: 'RD-100', date: 'Mar 01, 2026', amount: 380.50, type: 'Automated', period: 'February 2024' },
+  { id: 'RD-099', date: 'Feb 01, 2026', amount: 520.00, type: 'Automated', period: 'January 2024' },
+  { id: 'RD-098', date: 'Jan 15, 2026', amount: 120.00, type: 'Manual', period: 'Adjustment - missing streams' },
+];
+
 export default function Revenue() {
   const { theme } = useTheme();
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>(currencies[0]);
@@ -106,7 +113,7 @@ export default function Revenue() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [payoutStatus, setPayoutStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [isConfirming, setIsConfirming] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'earnings' | 'payouts'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'earnings' | 'payouts' | 'distributions'>('overview');
   const [releaseSearch, setReleaseSearch] = useState('');
 
   // Filter and Sort State
@@ -335,8 +342,14 @@ export default function Revenue() {
       )}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white">Revenue & Payouts</h1>
-          <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 mt-1">Track your earnings across all platforms and manage your finances.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white uppercase italic tracking-tighter">Revenue Insights.</h1>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400">Track your earnings across all platforms and manage your finances.</p>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Auto-Sync Active
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap gap-3 w-full sm:w-auto">
           <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-3 py-2 flex-1 sm:flex-none">
@@ -397,6 +410,7 @@ export default function Revenue() {
         {[
           { id: 'overview', label: 'Overview', icon: LayoutDashboard },
           { id: 'earnings', label: 'Earnings Breakdown', icon: PieChartIcon },
+          { id: 'distributions', label: 'Distributions', icon: Coins },
           { id: 'payouts', label: 'Payouts & History', icon: History },
         ].map((tab) => (
           <button
@@ -794,12 +808,63 @@ export default function Revenue() {
                       <span className="text-xs font-bold uppercase tracking-wider">Payout Notice</span>
                     </div>
                     <p className="text-sm text-zinc-400 leading-relaxed">
-                      Please ensure your withdrawal details are correct. KulBox is not responsible for funds sent to incorrect accounts.
+                      Please ensure your withdrawal details are correct. KulSound is not responsible for funds sent to incorrect accounts.
                     </p>
                   </div>
                 </div>
               </div>
             </>
+          )}
+
+          {activeTab === 'distributions' && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
+                <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Royalty Distributions</h3>
+                    <p className="text-xs text-zinc-500">History of automated and manual royalty additions to your balance.</p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-zinc-500 text-[10px] uppercase tracking-widest border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                        <th className="px-6 py-4 font-black">Date</th>
+                        <th className="px-6 py-4 font-black">Amount</th>
+                        <th className="px-6 py-4 font-black">Type</th>
+                        <th className="px-6 py-4 font-black">Period / Reason</th>
+                        <th className="px-6 py-4 font-black">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                      {distributionHistory.map((dist) => (
+                        <tr key={dist.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                          <td className="px-6 py-4 text-xs text-zinc-500">{dist.date}</td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm font-bold text-emerald-500">+${dist.amount.toLocaleString()}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={cn(
+                              "px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest",
+                              dist.type === 'Automated' ? "bg-brand-purple/10 text-brand-purple" : "bg-amber-500/10 text-amber-500"
+                            )}>
+                              {dist.type}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-zinc-500 font-medium">{dist.period}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-1.5 text-emerald-500 text-[10px] font-bold uppercase tracking-widest">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Distributed
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           )}
         </motion.div>
       </AnimatePresence>

@@ -17,12 +17,14 @@ import AuthPage from './components/AuthPage';
 import Onboarding from './components/Onboarding';
 import ArtistClaimModal from './components/ArtistClaimModal';
 import ReportModal from './components/ReportModal';
+import ChatBot from './components/ChatBot';
 import { useTheme } from './context/ThemeContext';
 import { AdminRoleType } from './lib/permissions';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [view, setView] = useState<'landing' | 'auth' | 'onboarding' | 'app'>('landing');
+  const [initialAuthView, setInitialAuthView] = useState<'login' | 'signup'>('login');
   const [userRole, setUserRole] = useState<'user' | 'admin'>('user');
   const [adminRole, setAdminRole] = useState<AdminRoleType | undefined>();
   const [verificationStatus, setVerificationStatus] = useState<'Unverified' | 'Pending' | 'Verified' | 'Rejected'>('Unverified');
@@ -65,12 +67,16 @@ export default function App() {
   };
 
   if (view === 'landing') {
-    return <LandingPage onGetStarted={() => setView('auth')} />;
+    return <LandingPage onGetStarted={(mode) => {
+      if (mode) setInitialAuthView(mode);
+      setView('auth');
+    }} />;
   }
 
   if (view === 'auth') {
     return (
       <AuthPage 
+        initialView={initialAuthView}
         onAuthComplete={handleAuthComplete} 
         onBack={() => setView('landing')}
       />
@@ -158,6 +164,8 @@ export default function App() {
         onClose={() => setIsReportModalOpen(false)}
         onSubmit={handleReportSubmit}
       />
+
+      <ChatBot />
     </div>
   );
 }

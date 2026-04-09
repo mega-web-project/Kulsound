@@ -6,7 +6,8 @@ export type Permission =
   | 'manage_verifications'
   | 'manage_reports'
   | 'manage_settings'
-  | 'view_revenue';
+  | 'view_revenue'
+  | 'manage_royalties';
 
 export type AdminRoleType = 'super_admin' | 'moderator' | 'support' | 'admin';
 
@@ -23,7 +24,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<AdminRoleType, Permission[]> = {
     'manage_verifications',
     'manage_reports',
     'manage_settings',
-    'view_revenue'
+    'view_revenue',
+    'manage_royalties'
   ],
   moderator: [
     'view_overview',
@@ -40,7 +42,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<AdminRoleType, Permission[]> = {
     'manage_users',
     'manage_tracks',
     'manage_verifications',
-    'manage_reports'
+    'manage_reports',
+    'manage_royalties'
   ]
 };
 
